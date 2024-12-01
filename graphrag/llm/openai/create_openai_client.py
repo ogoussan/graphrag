@@ -7,7 +7,7 @@ import logging
 from functools import cache
 
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
-from openai import AsyncAzureOpenAI, AsyncOpenAI
+from openai import AsyncAzureOpenAI, AsyncOpenAI, OpenAI
 
 from .openai_configuration import OpenAIConfiguration
 from .types import OpenAIClientTypes
@@ -56,11 +56,9 @@ def create_openai_client(
         )
 
     log.info("Creating OpenAI client base_url=%s", configuration.api_base)
-    return AsyncOpenAI(
-        api_key=configuration.api_key,
-        base_url=configuration.api_base,
-        organization=configuration.organization,
-        # Timeout/Retry Configuration - Use Tenacity for Retries, so disable them here
-        timeout=configuration.request_timeout or 180.0,
-        max_retries=0,
-    )
+    client = OpenAI(
+        base_url='http://localhost:11434/v1/',
+        api_key='ollama',  # required but ignored
+    ) 
+
+    return client
