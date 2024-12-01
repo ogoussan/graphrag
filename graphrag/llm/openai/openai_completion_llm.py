@@ -18,8 +18,6 @@ from .openai_configuration import OpenAIConfiguration
 from .types import OpenAIClientTypes
 from .utils import get_completion_llm_args
 
-import ollama
-
 log = logging.getLogger(__name__)
 
 
@@ -41,6 +39,5 @@ class OpenAICompletionLLM(BaseLLM[CompletionInput, CompletionOutput]):
         args = get_completion_llm_args(
             kwargs.get("model_parameters"), self.configuration
         )
-        # completion = await self.client.completions.create(prompt=input, **args)
-        completion = ollama.generate(model=args["model"], prompt=input)
+        completion = await self.client.completions.create(prompt=input, **args)
         return completion.choices[0].text

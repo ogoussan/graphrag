@@ -15,7 +15,6 @@ from graphrag.llm.types import (
 from .openai_configuration import OpenAIConfiguration
 from .types import OpenAIClientTypes
 
-import ollama
 
 class OpenAIEmbeddingsLLM(BaseLLM[EmbeddingInput, EmbeddingOutput]):
     """A text-embedding generator LLM."""
@@ -34,5 +33,8 @@ class OpenAIEmbeddingsLLM(BaseLLM[EmbeddingInput, EmbeddingOutput]):
             "model": self.configuration.model,
             **(kwargs.get("model_parameters") or {}),
         }
-        embedding = ollama.embeddings(model=args["model"],prompt=input)
+        embedding = await self.client.embeddings.create(
+            input=input,
+            **args,
+        )
         return [d.embedding for d in embedding.data]
