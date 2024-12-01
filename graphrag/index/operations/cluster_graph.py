@@ -81,6 +81,21 @@ def cluster_graph(
         graph_level_pairs_column.append(graph_level_pairs)
     output[to] = graph_level_pairs_column
 
+    # Print the first few entries of the 'output[to]' column to inspect its structure
+    print("First few entries in 'output[to]':")
+    print(output[to].head())
+
+    # Check if all entries are lists/tuples of length 2 and print their lengths
+    print("\nChecking lengths of entries in 'output[to]':")
+    for index, item in enumerate(output[to]):
+        if isinstance(item, (list, tuple)):
+            print(f"Entry at index {index} has length {len(item)}: {item}")
+        else:
+            print(f"Entry at index {index} is not a list/tuple: {item}")
+
+    # Print the expected number of columns
+    print(f"\nExpected number of columns: 2 (for '{level_to}' and '{to}')")
+
     # explode the list of (level, graph) pairs into separate rows
     output = output.explode(to, ignore_index=True)
 
