@@ -50,7 +50,7 @@ class OpenAIChatLLM(BaseLLM[CompletionInput, CompletionOutput]):
             *history,
             {"role": "user", "content": input},
         ]
-        completion = await self.client.chat.completions.create(
+        completion = self.client.chat.completions.create(
             messages=messages, **args
         )
         return completion.choices[0].message.content
