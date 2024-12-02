@@ -64,6 +64,7 @@ async def create_base_entity_graph(
         num_threads=extraction_num_threads,
     )
 
+    log.info("Merging %d entity graphs", len(entity_graphs))
     merged_graph = merge_graphs(
         entity_graphs,
         callbacks,
@@ -71,6 +72,7 @@ async def create_base_entity_graph(
         edge_operations=edge_merge_config,
     )
 
+    log.info("Summarizing %d entities", len(merged_graph.nodes))
     summarized = await summarize_descriptions(
         merged_graph,
         callbacks,
@@ -79,6 +81,7 @@ async def create_base_entity_graph(
         num_threads=summarization_num_threads,
     )
 
+    log.info("Clustering %d entities", len(summarized.nodes))
     clustered = cluster_graph(
         summarized,
         callbacks,
@@ -89,6 +92,7 @@ async def create_base_entity_graph(
     )
 
     if embedding_strategy:
+        log.info("Embedding %d entities", len(clustered.nodes))
         clustered["embeddings"] = await embed_graph(
             clustered,
             callbacks,
@@ -97,6 +101,7 @@ async def create_base_entity_graph(
         )
 
     if snapshot_raw_entities_enabled:
+        log.info("Snapshotting %d raw extracted entities", len(entities))
         await snapshot(
             entities,
             name="raw_extracted_entities",
@@ -105,6 +110,7 @@ async def create_base_entity_graph(
         )
 
     if snapshot_graphml_enabled:
+        log.info("Snapshotting merged graph", len(merged_graph.nodes))
         await snapshot_graphml(
             merged_graph,
             name="merged_graph",
@@ -131,6 +137,7 @@ async def create_base_entity_graph(
                 formats=[{"format": "text", "extension": "graphml"}],
             )
 
+    log.info("Finalizing output with %d columns", len(final_columns))
     final_columns = ["level", "clustered_graph"]
     if embedding_strategy:
         final_columns.append("embeddings")
@@ -138,6 +145,7 @@ async def create_base_entity_graph(
     output = cast(pd.DataFrame, clustered[final_columns])
 
     if snapshot_transient_enabled:
+        log.info("Snapshotting transient output")
         await snapshot(
             output,
             name="create_base_entity_graph",

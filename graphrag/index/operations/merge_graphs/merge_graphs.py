@@ -7,6 +7,7 @@ from typing import Any
 
 import networkx as nx
 from datashaper import VerbCallbacks, progress_iterable
+import logging
 
 from graphrag.index.operations.merge_graphs.typing import (
     BasicMergeOperation,
@@ -29,6 +30,8 @@ DEFAULT_EDGE_OPERATIONS = {
 }
 
 DEFAULT_CONCAT_SEPARATOR = ","
+
+logging.basicConfig(level=logging.INFO)
 
 
 def merge_graphs(
@@ -95,11 +98,14 @@ def merge_graphs(
     }
 
     mega_graph = nx.Graph()
+    logging.info("Starting to merge graphs.")
     num_total = len(graphs)
-    for graph in progress_iterable(graphs, callbacks.progress, num_total):
+    for i, graph in enumerate(progress_iterable(graphs, callbacks.progress, num_total)):
+        logging.info(f"Merging graph {i+1} of {num_total}.")
         merge_nodes(mega_graph, graph, node_ops)
         merge_edges(mega_graph, graph, edge_ops)
 
+    logging.info("Finished merging graphs.")
     return mega_graph
 
 

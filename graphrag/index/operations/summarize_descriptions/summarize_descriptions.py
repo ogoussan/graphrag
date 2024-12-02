@@ -71,7 +71,7 @@ async def summarize_descriptions(
             proxy: !ENV ${GRAPHRAG_OPENAI_PROXY} # The proxy to use for azure
     ```
     """
-    log.debug("summarize_descriptions strategy=%s", strategy)
+    log.info("summarize_descriptions strategy=%s", strategy)
     strategy = strategy or {}
     strategy_exec = load_strategy(
         strategy.get("type", SummarizeStrategyType.graph_intelligence)
