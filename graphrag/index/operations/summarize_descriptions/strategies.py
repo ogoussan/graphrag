@@ -24,6 +24,7 @@ async def run_graph_intelligence(
     args: StrategyConfig,
 ) -> SummarizedDescriptionResult:
     """Run the graph intelligence entity extraction strategy."""
+    log.info("Summarizing descriptions with args: %s", args)
     llm_config = args.get("summary_llm", {})
     log.info("Summarizing descriptions with LLM config: %s", llm_config)
     llm_type = llm_config.get("type")
