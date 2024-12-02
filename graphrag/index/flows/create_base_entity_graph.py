@@ -3,6 +3,7 @@
 
 """All the steps to create the base entity graph."""
 
+import logging
 from typing import Any, cast
 
 import pandas as pd
@@ -25,6 +26,8 @@ from graphrag.index.operations.summarize_descriptions import (
 from graphrag.storage.pipeline_storage import PipelineStorage
 
 
+log = logging.getLogger(__name__)
+
 async def create_base_entity_graph(
     text_units: pd.DataFrame,
     callbacks: VerbCallbacks,
@@ -46,6 +49,8 @@ async def create_base_entity_graph(
 ) -> pd.DataFrame:
     """All the steps to create the base entity graph."""
     # this returns a graph for each text unit, to be merged later
+    log.info("Extracting entities from %d text units", len(text_units))
+
     entities, entity_graphs = await extract_entities(
         text_units,
         callbacks,
