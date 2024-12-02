@@ -112,7 +112,7 @@ async def extract_entities(
         type: nltk
     ```
     """
-    log.debug("entity_extract strategy=%s", strategy)
+    log.info("entity_extract strategy=%s", strategy)
     if entity_types is None:
         entity_types = DEFAULT_ENTITY_TYPES
     strategy = strategy or {}
@@ -138,6 +138,8 @@ async def extract_entities(
         num_started += 1
         log.info("Extracted entities from %d of %d text units", num_started, total_rows)
         return [result.entities, result.graph]
+
+    log.info("Before derive_from_rows")
 
     results = await derive_from_rows(
         input,
