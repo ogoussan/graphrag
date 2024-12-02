@@ -3,6 +3,7 @@
 
 """A module containing run_graph_intelligence,  run_resolve_entities and _create_text_list_splitter methods to run graph intelligence."""
 
+import logging
 from datashaper import VerbCallbacks
 
 from graphrag.cache.pipeline_cache import PipelineCache
@@ -14,7 +15,7 @@ from graphrag.index.operations.summarize_descriptions.typing import (
 )
 from graphrag.llm import CompletionLLM
 
-
+log = logging.getLogger(__name__)
 async def run_graph_intelligence(
     described_items: str | tuple[str, str],
     descriptions: list[str],
