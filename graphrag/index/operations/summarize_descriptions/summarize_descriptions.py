@@ -104,6 +104,10 @@ async def summarize_descriptions(
 
         results = await asyncio.gather(*futures)
 
+        # Log the number of items summarized
+        summarized_count = sum(1 for result in results if result is not None)
+        log.info("Total items summarized: %d out of %d", summarized_count, ticker_length)
+
         for result in results:
             graph_item = result.items
             if isinstance(graph_item, str) and graph_item in graph.nodes():
