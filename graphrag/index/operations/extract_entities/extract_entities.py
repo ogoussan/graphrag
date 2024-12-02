@@ -122,6 +122,7 @@ async def extract_entities(
     strategy_config = {**strategy}
 
     num_started = 0
+    total_rows = len(input)
 
     async def run_strategy(row):
         nonlocal num_started
@@ -135,6 +136,7 @@ async def extract_entities(
             strategy_config,
         )
         num_started += 1
+        log.info("Extracted entities from %d of %d text units", num_started, total_rows)
         return [result.entities, result.graph]
 
     results = await derive_from_rows(
