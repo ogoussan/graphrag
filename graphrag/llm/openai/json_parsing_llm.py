@@ -18,7 +18,7 @@ from .utils import try_parse_json_object
 
 
 class JsonParsingLLM(LLM[CompletionInput, CompletionOutput]):
-    """An OpenAI History-Tracking LLM."""
+    """An OpenAI JSON Parsing LLM."""
 
     _delegate: CompletionLLM
 

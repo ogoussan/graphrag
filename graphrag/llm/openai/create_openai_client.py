@@ -57,8 +57,8 @@ def create_openai_client(
 
     log.info("Creating OpenAI client base_url=%s", configuration.api_base)
     client = OpenAI(
-        base_url='http://localhost:11434/v1/',
-        api_key='ollama',  # required but ignored
+        base_url=configuration.api_base,
+        api_key=configuration.api_key,  # required but ignored
     ) 
 
     return client

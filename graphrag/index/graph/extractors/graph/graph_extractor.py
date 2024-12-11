@@ -138,8 +138,6 @@ class GraphExtractor:
 
         output = await self._process_results(
             all_records,
-            prompt_variables.get(self._tuple_delimiter_key, DEFAULT_TUPLE_DELIMITER),
-            prompt_variables.get(self._record_delimiter_key, DEFAULT_RECORD_DELIMITER),
         )
 
         return GraphExtractionResult(
@@ -186,122 +184,110 @@ class GraphExtractor:
     async def _process_results(
         self,
         results: dict[int, str],
-        tuple_delimiter: str,
-        record_delimiter: str,
     ) -> nx.Graph:
-        """Parse the result string to create an undirected unipartite graph.
+        """Parse the JSON result to create an undirected unipartite graph.
 
         Args:
-            - results - dict of results from the extraction chain
+            - results - dict of JSON results from the extraction chain
             - tuple_delimiter - delimiter between tuples in an output record, default is '<|>'
             - record_delimiter - delimiter between records, default is '##'
         Returns:
-            - output - unipartite graph in graphML format
+            - output - unipartite graph
         """
         graph = nx.Graph()
+
         for source_doc_id, extracted_data in results.items():
-            records = [r.strip() for r in extracted_data.split(record_delimiter)]
+            # Assuming `extracted_data` is in JSON format
+            try:
+                data = json.loads(extracted_data)
+            except json.JSONDecodeError:
+                logging.error(f"Failed to parse JSON for doc_id {source_doc_id}")
+                continue
+            
+            # Process entities
+            for entity in data.get('entities', []):
+                entity_name = clean_str(entity['name'].upper())
+                entity_type = clean_str(entity['type'].upper())
+                entity_description = clean_str(entity['description'])
 
-            for record in records:
-                record = re.sub(r"^\(|\)$", "", record.strip())
-                record_attributes = record.split(tuple_delimiter)
-
-                if record_attributes[0] == '"entity"' and len(record_attributes) >= 4:
-                    # add this record as a node in the G
-                    entity_name = clean_str(record_attributes[1].upper())
-                    entity_type = clean_str(record_attributes[2].upper())
-                    entity_description = clean_str(record_attributes[3])
-
-                    if entity_name in graph.nodes():
-                        node = graph.nodes[entity_name]
-                        if self._join_descriptions:
-                            node["description"] = "\n".join(
-                                list({
-                                    *_unpack_descriptions(node),
-                                    entity_description,
-                                })
-                            )
-                        else:
-                            if len(entity_description) > len(node["description"]):
-                                node["description"] = entity_description
-                        node["source_id"] = ", ".join(
+                # Add entity to graph
+                if entity_name in graph.nodes():
+                    node = graph.nodes[entity_name]
+                    if self._join_descriptions:
+                        node["description"] = "\n".join(
                             list({
-                                *_unpack_source_ids(node),
-                                str(source_doc_id),
+                                *_unpack_descriptions(node),
+                                entity_description,
                             })
                         )
-                        node["type"] = (
-                            entity_type if entity_type != "" else node["type"]
-                        )
                     else:
-                        graph.add_node(
-                            entity_name,
-                            type=entity_type,
-                            description=entity_description,
-                            source_id=str(source_doc_id),
-                        )
+                        if len(entity_description) > len(node["description"]):
+                            node["description"] = entity_description
+                    node["source_id"] = ", ".join(
+                        list({
+                            *_unpack_source_ids(node),
+                            str(source_doc_id),
+                        })
+                    )
+                    node["type"] = (
+                        entity_type if entity_type != "" else node["type"]
+                    )
+                else:
+                    graph.add_node(
+                        entity_name,
+                        type=entity_type,
+                        description=entity_description,
+                        source_id=str(source_doc_id),
+                    )
 
-                if (
-                    record_attributes[0] == '"relationship"'
-                    and len(record_attributes) >= 5
-                ):
-                    # add this record as edge
-                    source = clean_str(record_attributes[1].upper())
-                    target = clean_str(record_attributes[2].upper())
-                    edge_description = clean_str(record_attributes[3])
-                    edge_source_id = clean_str(str(source_doc_id))
-                    try:
-                        weight = float(record_attributes[-1])
-                    except ValueError:
-                        weight = 1.0
+            # Process relationships
+            for relationship in data.get('relationships', []):
+                source = clean_str(relationship['source_entity'].upper())
+                target = clean_str(relationship['target_entity'].upper())
+                edge_description = clean_str(relationship['relationship_description'])
+                edge_source_id = clean_str(str(source_doc_id))
+                weight = float(relationship.get('relationship_strength', 1.0))
 
-                    if source not in graph.nodes():
-                        graph.add_node(
-                            source,
-                            type="",
-                            description="",
-                            source_id=edge_source_id,
-                        )
-                    if target not in graph.nodes():
-                        graph.add_node(
-                            target,
-                            type="",
-                            description="",
-                            source_id=edge_source_id,
-                        )
-                    if graph.has_edge(source, target):
-                        edge_data = graph.get_edge_data(source, target)
-                        if edge_data is not None:
-                            weight += edge_data["weight"]
-                            if self._join_descriptions:
-                                edge_description = "\n".join(
-                                    list({
-                                        *_unpack_descriptions(edge_data),
-                                        edge_description,
-                                    })
-                                )
-                            edge_source_id = ", ".join(
-                                list({
-                                    *_unpack_source_ids(edge_data),
-                                    str(source_doc_id),
-                                })
-                            )
-                    graph.add_edge(
+                # Ensure nodes exist
+                if source not in graph.nodes():
+                    graph.add_node(
                         source,
+                        type="",
+                        description="",
+                        source_id=edge_source_id,
+                    )
+                if target not in graph.nodes():
+                    graph.add_node(
                         target,
-                        weight=weight,
-                        description=edge_description,
+                        type="",
+                        description="",
                         source_id=edge_source_id,
                     )
 
-        return graph
+                # Add or update edge
+                if graph.has_edge(source, target):
+                    edge_data = graph.get_edge_data(source, target)
+                    if edge_data is not None:
+                        weight += edge_data["weight"]
+                        if self._join_descriptions:
+                            edge_description = "\n".join(
+                                list({
+                                    *_unpack_descriptions(edge_data),
+                                    edge_description,
+                                })
+                            )
+                        edge_source_id = ", ".join(
+                            list({
+                                *_unpack_source_ids(edge_data),
+                                str(source_doc_id),
+                            })
+                        )
+                graph.add_edge(
+                    source,
+                    target,
+                    weight=weight,
+                    description=edge_description,
+                    source_id=edge_source_id,
+                )
 
-
-def _unpack_descriptions(data: Mapping) -> list[str]:
-    value = data.get("description", None)
-    return [] if value is None else value.split("\n")
-
-
-def _unpack_source_ids(data: Mapping) -> list[str]:
-    value = data.get("source_id", None)
-    return [] if value is None else value.split(", ")
+            return graph

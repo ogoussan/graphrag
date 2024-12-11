@@ -50,6 +50,7 @@ class OpenAIChatLLM(BaseLLM[CompletionInput, CompletionOutput]):
             *history,
             {"role": "user", "content": input},
         ]
+        log.info("Executing LLM with args: %s", args)
         completion = self.client.chat.completions.create(
             messages=messages, **args
         )
@@ -93,14 +94,12 @@ class OpenAIChatLLM(BaseLLM[CompletionInput, CompletionOutput]):
         self, input: CompletionInput, **kwargs: Unpack[LLMInput]
     ) -> LLMOutput[CompletionOutput]:
         """Generate JSON output using a model's native JSON-output support."""
+        log.info("Generating JSON output using native JSON support")
         result = await self._invoke(
             input,
             **{
                 **kwargs,
-                "model_parameters": {
-                    **(kwargs.get("model_parameters") or {}),
-                    "response_format": {"type": "json_object"},
-                },
+                "response_format": {"type": "json_object"}, 
             },
         )
 
